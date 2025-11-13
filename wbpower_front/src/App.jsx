@@ -1,8 +1,13 @@
+import React, { createContext, useEffect } from "react";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-import { createContext, useEffect } from "react";
-import { useDispatch, useSelector } from 'react-redux';
-import { fetchUser } from './redux/authSlice';
+import { useDispatch, useSelector } from "react-redux";
+import { fetchUser } from "./redux/authSlice";
+import "./index.css";
+//import React from "react";
 
+
+
+// Public login (only for Admin)
 import AdminLayout from "./components/admin/AdminLayout";
 import { Dashboard } from "./pages/admin/Dashboard";
 import Post from "./pages/admin/PostListPage";
@@ -17,8 +22,18 @@ import SliderForm from "./pages/admin/SliderFormPage";
 import CustomPostFormTable from "./pages/admin/CustomPostFormTablePage";
 import CustomPostFormPage from "./pages/admin/CustomPostFormPage";
 import CustomPostList from "./pages/admin/CustomPostListPage";
+import Home from "./pages/user/Home";
+import "bootstrap/dist/css/bootstrap.min.css";
+import "./assets/css/admin/style.css";
+import "./assets/css/admin/user/userstyle.css";
+import "@fortawesome/fontawesome-free/css/all.min.css";
 
-import "./assets/css/style.css";
+// import '../assets/admin/css/argon-dashboard-tailwind.css?v=1.0.1';
+// import '../assets/admin/css/nucleo-icons.css';
+// import '../assets/admin/css/nucleo-svg.css';
+// import '../assets/admin/css/custom.css';
+import "./assets/css/admin/style.css";
+import "./assets/css/admin/user/userstyle.css";
 import '@fortawesome/fontawesome-free/css/all.min.css';
 
 const Mycontext = createContext();
@@ -29,7 +44,7 @@ const PrivateRoute = ({ children }) =>
 
 // Public route guard
 const PublicRoute = ({ children }) => 
-  !checkAuthToken() ? children : <Navigate to="/dashboard" replace />;
+  !checkAuthToken() ? children : <Navigate to="/admin/dashboard" replace />;
 
 // Check if token exists for auth status
 const checkAuthToken = () => localStorage.getItem("token") !== null;
@@ -51,11 +66,15 @@ function App() {
     <Mycontext.Provider value={values}>
       <BrowserRouter>
         <Routes>
-          {/* Public route */}
+
+          {/* Public home as default */}
+          <Route path="/" element={<Home />} />
+
+         {/* Public login (only for Admin) */}
           <Route path="login" element={<PublicRoute><Login /></PublicRoute>} />
 
-          {/* Protected route wrapper */}
-          <Route path="/" element={<PrivateRoute><AdminLayout /></PrivateRoute>}>
+          {/* Protected admin area (keeps same nested admin routes) */}
+          <Route path="/admin" element={<PrivateRoute><AdminLayout /></PrivateRoute>}>
             <Route path="dashboard" element={<Dashboard />} />
             <Route path="post" element={<Post />} />
             <Route path="postform/:id?" element={<PostForm />} />
@@ -68,13 +87,18 @@ function App() {
             <Route path="custom-post-form-table" element={<CustomPostFormTable />} />
             <Route path="custom-post-form/:tableName/:id?" element={<CustomPostFormPage />} />
             <Route path="custom-post-list/:tableName" element={<CustomPostList />} />
+            {/* you can keep an inner default for /admin if desired */}
+            <Route index element={<Navigate to="dashboard" replace />} />
           </Route>
 
+            {/* <Route path="/" element={<Navigate to="/Home" replace />} />
+          </Route> */}
+          
           {/* Redirect unknown routes */}
-          <Route
+          {/* <Route
             path="*"
             element={checkAuthToken() ? <Navigate to="/dashboard" replace /> : <Navigate to="/login" replace />}
-          />
+          /> */}
         </Routes>
       </BrowserRouter>
     </Mycontext.Provider>

@@ -58,19 +58,19 @@ const AdminSidebar = ({ sidebarOpen, closeSidebar }) => {
 
   // Menu items including dynamic custom posts submenu
   const menuItems = [
-    { label: "Dashboard", icon: <MdDashboard />, to: "/dashboard" },
+    { label: "Dashboard", icon: <MdDashboard />, to: "/admin/dashboard" },
     {
       label: "Slider",
       icon: <FaSliders />,
-      children: [{ label: "Slider List", to: "/slider" }],
+      children: [{ label: "Slider List", to: "/admin/slider" }],
     },
-    { label: "Menu", icon: <MdOutlineMenu />, to: "/menu" },
+    { label: "Menu", icon: <MdOutlineMenu />, to: "/admin/menu" },
     {
       label: "Post",
       icon: <MdPostAdd />,
       children: [
-        { label: "Post Category", to: "/post-category" },
-        { label: "Add Custom Post", to: "/custom-post-form-table" },
+        { label: "Post Category", to: "/admin/post-category" },
+        { label: "Add Custom Post", to: "/admin/custom-post-form-table" },
       ],
     },
     {
@@ -81,7 +81,7 @@ const AdminSidebar = ({ sidebarOpen, closeSidebar }) => {
     {
       label: "Settings",
       icon: <MdSettings />,
-      children: [{ label: "Profile", to: "/user-profile" }],
+      children: [{ label: "Profile", to: "/admin/user-profile" }],
     },
     { label: "Sign out", icon: <MdLogout />, isLogout: true },
   ];

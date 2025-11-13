@@ -4,7 +4,8 @@ import { FiEdit, FiTrash2, FiPlus, FiSearch } from "react-icons/fi";
 import { MdChevronLeft, MdChevronRight } from "react-icons/md";
 import api from "../../../api/api"; // axios instance
 
-export default function PostList({ id, initialStatus, onStatusChange }) {
+export default function PostList({ id, initialStatus, onStatusChange }) 
+{
   const [posts, setPosts] = useState([]);
   const [pending, setPending] = useState(true);
   const [search, setSearch] = useState("");
