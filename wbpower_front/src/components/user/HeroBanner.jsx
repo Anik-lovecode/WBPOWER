@@ -1,9 +1,9 @@
-import Navbar from "./Navbar";
-
+import React from 'react';
+import Navbar from './Navbar'
 const HeroBanner = () => {
   return <><section className="hero-banner text-white position-relative">
   {/* ✅ Navbar Section */}
-  <Navbar />
+  {/* <Navbar /> */}
   {/* ✅ Slider Section */}
   <div id="heroCarousel" className="carousel slide" data-bs-ride="carousel">
     <div className="carousel-inner">

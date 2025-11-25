@@ -11,7 +11,9 @@ import GallerySection from "../../components/user/GallerySection";
 import Footer from "../../components/user/Footer";
 import NewsBar from '../../components/user/NewsBar';
 import Info from '../../components/user/Info';
+import NavBar1 from '../../components/user/NavBar1.jsx';  
 import '../../index.css';
+import Navbar from '../../components/user/Navbar.jsx';
 
 
 const Home = () => {
@@ -19,10 +21,14 @@ const Home = () => {
     <div>
 
     <TopBar />
-    <LogoSection />
+    <LogoSection className="LogoSection" />
+    {/* <NavBar1/> */}
+     <Navbar  />
     <HeroBanner /> 
     <NewsBar/> 
     <AboutSection />
+    {/* <NavBar1/> */}
+    
     <NewsSection />
     <Info/>
     <GallerySection />

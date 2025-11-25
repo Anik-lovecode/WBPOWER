@@ -1,3 +1,139 @@
+/* =========================
+   NavBar1 — Transparent Gov style (fixed in-flow)
+   ========================= */
+/* =========================
+   NavBar1 styles (transparent -> sticky solid green)
+   Append at end of your global CSS
+   ========================= */
+
+/* color variables (adjust if needed) */
+:root {
+  --nav-green: #075329;      /* solid sticky background */
+  --nav-green-dark: #bbe427c9; /* dropdown slightly darker */
+  --nav-overlay: rgba(26, 185, 98, 0.12); /* transparent tint */
+}
+
+/* root nav container (keeps in-flow initially) */
+.NavBar1-root {
+  position: relative; /* in-flow by default — will become fixed when sticky */
+  width: 100%;
+  z-index: 1030;
+  background: transparent;
+  padding: 0.25rem 0;
+  transition: background 220ms ease, box-shadow 220ms ease;
+}
+
+/* when in-flow (below logo) — subtle transparent tint */
+.NavBar1-flow {
+  background: var(--nav-overlay);
+  box-shadow: none;
+}
+
+/* sticky — fixed to top with solid green background */
+.NavBar1-sticky {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  background: var(--nav-green);
+  box-shadow: 0 4px 18px rgba(0,0,0,0.22);
+}
+
+/* brand/logo */
+.NavBar1-root .navbar-brand {
+  display: flex;
+  align-items: center;
+  gap: .5rem;
+  color: #fff;
+  font-weight: 700;
+}
+
+/* nav links */
+.NavBar1-root .nav-link {
+  color: #3f0909 !important;
+  padding: 10px 12px;
+  font-size: 0.95rem;
+}
+
+/* dropdown styling — make dropdowns match green theme */
+.NavBar1-root .dropdown-menu {
+  background: linear-gradient(180deg, var(--nav-green-dark), var(--nav-green));
+  border: none;
+  color: #fff;
+  min-width: 220px;
+  border-radius: 6px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.35);
+}
+
+/* dropdown items */
+.NavBar1-root .dropdown-item {
+  color: #fff;
+  padding: 10px 14px;
+  font-weight: 500;
+}
+.NavBar1-root .dropdown-item:hover,
+.NavBar1-root .dropdown-item:focus {
+  background: rgba(255,255,255,0.06);
+  color: #fff;
+}
+
+/* nested dropend menu (right-open) styling */
+.NavBar1-root .dropend > .dropdown-menu {
+  left: 100%;
+  top: 0;
+  margin-left: 6px;
+}
+
+/* mobile panel */
+.NavBar1-root .NavBar1-mobile-block summary {
+  list-style: none;
+  cursor: pointer;
+  color: #fff;
+  padding: 8px 0;
+}
+.NavBar1-root .NavBar1-dropdown-item {
+  color: #fff;
+}
+
+/* toggler icon (white bars) - uses bootstrap default but ensure visibility */
+.NavBar1-root .navbar-toggler-icon {
+  filter: invert(1) brightness(1.2);
+}
+
+/* accessibility focus */
+.NavBar1-root a:focus, .NavBar1-root button:focus {
+  outline: 3px solid rgba(255,255,255,0.12);
+  outline-offset: 2px;
+}
+
+/* small screens adjustments */
+@media (max-width: 991px) {
+  .NavBar1-root .navbar-nav {
+    flex-direction: column;
+    gap: 0;
+  }
+  .NavBar1-root .navbar-collapse {
+    padding-top: 8px;
+  }
+}
+
+/* ensure other global rules don't hide nav */
+.NavBar1-root {
+  visibility: visible !important;
+  opacity: 1 !important;
+  pointer-events: auto !important;
+}
+
+
+
+/* another addition for navbar */
+
+
+
+
+
+
+  
   body {
     font-family: 'Poppins', sans-serif;
   }
@@ -52,12 +188,12 @@ header {
  
   /* Navbar */
   .navbar {
-    background: #ffffff42;
+    background: #acb80742;
     transition: background 0.3s ease;
   }
 
   .navbar .nav-link {
-    color: #fff;
+    color: #573107;
     font-weight: 400;
     font-size: 0.9rem;
   }
