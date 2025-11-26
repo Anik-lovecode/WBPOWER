@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class Menu extends Model
 {
-   protected $fillable = ['title', 'url', 'parent_id', 'order', 'active'];
+   protected $fillable = ['title', 'url', 'parent_id', 'order', 'is_active'];
 
     // Relationship for nested menus
     // public function children()
@@ -15,7 +15,7 @@ class Menu extends Model
     // }
                 public function children()
             {
-                return $this->hasMany(Menu::class, 'parent_id')->where('active', true)->orderBy('order');
+                return $this->hasMany(Menu::class, 'parent_id')->where('is_active', true)->orderBy('order');
             }
 
             public function childrenRecursive()

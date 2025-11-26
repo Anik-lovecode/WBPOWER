@@ -35,6 +35,7 @@ import "@fortawesome/fontawesome-free/css/all.min.css";
 import "./assets/css/admin/style.css";
 import "./assets/css/admin/user/userstyle.css";
 import '@fortawesome/fontawesome-free/css/all.min.css';
+import ContactUs from "./pages/user/ContactUs";
 
 const Mycontext = createContext();
 
@@ -69,6 +70,8 @@ function App() {
 
           {/* Public home as default */}
           <Route path="/" element={<Home />} />
+          <Route path="/contact_us" element={<ContactUs />} />
+
 
          {/* Public login (only for Admin) */}
           <Route path="login" element={<PublicRoute><Login /></PublicRoute>} />

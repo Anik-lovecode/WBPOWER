@@ -19,7 +19,7 @@ const normalizeTree = (items = []) =>
     children: item.children_recursive ? normalizeTree(item.children_recursive) : [],
   }));
 
-export default function NavBar1() {
+export default function NavBar() {
   const [menus, setMenus] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);

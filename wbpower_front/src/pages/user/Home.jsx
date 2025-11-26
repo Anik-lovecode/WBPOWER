@@ -14,6 +14,7 @@ import Info from '../../components/user/Info';
 import NavBar1 from '../../components/user/NavBar1.jsx';  
 import '../../index.css';
 import Navbar from '../../components/user/Navbar.jsx';
+import NavNew from '../../components/user/NavNew.jsx';
 
 
 const Home = () => {
@@ -23,7 +24,8 @@ const Home = () => {
     <TopBar />
     <LogoSection className="LogoSection" />
     {/* <NavBar1/> */}
-     <Navbar  />
+     {/* <Navbar  /> */}
+     <NavNew />
     <HeroBanner /> 
     <NewsBar/> 
     <AboutSection />
