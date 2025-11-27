@@ -46,7 +46,8 @@ Route::middleware('auth:api')->put('updatepoststatus/{post_id}', [PostController
 Route::middleware('auth:api')->delete('deletemenu/{menu_id}', [MenuController::class, 'deleteMenu']);
 // Route::middleware('auth:api')->put('/menu/{id}', [MenuController::class, 'menuUpdate']);
 
-Route::middleware('auth:api')->get('/menu-list', [MenuController::class, 'menuList']);
+// Public menus should be available on the public site (Home page) without authentication
+Route::get('/menu-list', [MenuController::class, 'menuList']);
 Route::middleware('auth:api')->put('/menu', [MenuController::class, 'menuCreate']);         // create
 Route::middleware('auth:api')->put('/menu/{id}', [MenuController::class, 'menuUpdate']);  // update
 // Route::middleware('auth:api')->delete('/deletemenu/{id}', [MenuController::class, 'menuDelete']); // delete

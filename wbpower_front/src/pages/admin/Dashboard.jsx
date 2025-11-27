@@ -26,14 +26,15 @@ export const Dashboard = () => {
   return (
     <>
       {/* Stats row */}
-    <div class="container-fluid py-2">
-      <div class="row">
-         <div class="ms-3">
-          <h3 class="mb-0 h4 font-weight-bolder">Dashboard</h3>
-          <p class="mb-4">
+    <div className="container-fluid py-2">
+      <div className="row">
+         <div className="ms-3">
+          <h3 className="mb-0 h4 font-weight-bolder">Dashboard</h3>
+          <p className="mb-4">
             Check the sales, value and bounce rate by country.
           </p>
         </div>
+      </div>
       <div className="row mb-4">
         <div className="col-md-3">
           <div className="card p-3">
@@ -107,8 +108,7 @@ export const Dashboard = () => {
       </ResponsiveContainer>
     </div>
   </div>*/}
-</div>
-</div>
+      </div>
     </>
   );
 };

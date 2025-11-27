@@ -19,7 +19,7 @@ const AboutSection = () => (
         <div className="about-content">
           <h2> ⚡About us</h2>
           <p>
-            A full-fledged Department of Power under Government of West Bengal came into being on 19th September, 1972. Until then, matters pertaining to power were being looked after by the Electricity Development Directorate under the Department of Commerce & Industries. The driving forces/factors behind the decision to create a separate department under the stewardship of a Minister-in-charge of cabinet rank were:
+            A full-fledged Department of Power under Government of West Bengal came into being on 19th September, 1972. Until then, matters pertaining to power were being looked after by the Electricity Development Directorate under the Department of Commerce & Industries. The driving forces/factors behind the decision to create a separate department under the stewardship of a Minister-in-charge of cabinet rank were:</p>
 
 <p>Urgent requirement of more power for accelerating the economic growth of the state</p>
 <p>Need for long term perspective planning for generation of power and execution of power projects</p>
@@ -32,7 +32,7 @@ The process of reforms in power sector in West Bengal began in 2005, with restru
 
 <p>West Bengal State Electricity Distribution Company Ltd. (WBSEDCL) – Distribution Company</p>
 <p>West Bengal State Electricity Transmission Company Ltd. (WBSETCL) – Transmission Company</p>
-The generation function of erstwhile state utility has been organized under a separate entity, West Bengal Power Development Corporation Ltd. (WBPDCL). Established in 1985, WBPDCL is responsible for thermal power generation in the State, while hydro generation being undertaken by the then WBSEB till the time of unbundling has been currently transferred to WBSEDCL.
+<p>The generation function of erstwhile state utility has been organized under a separate entity, West Bengal Power Development Corporation Ltd. (WBPDCL). Established in 1985, WBPDCL is responsible for thermal power generation in the State, while hydro generation being undertaken by the then WBSEB till the time of unbundling has been currently transferred to WBSEDCL.
 
 The State Regulatory Commission, West Bengal State Electricity Regulatory Commission (WBERC) was established in 1999.
 

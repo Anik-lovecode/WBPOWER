@@ -76,8 +76,8 @@ export default function SliderList({ id, initialStatus, onStatusChange }) {
   const handleNext = () =>
     setCurrentPage((prev) => Math.min(prev + 1, totalPages));
 
-  const AddSlider = () => navigate("/sliderform");
-  const handleEdit = (Slider) => navigate(`/sliderform/${Slider.id}`);
+  const AddSlider = () => navigate("/admin/sliderform");
+  const handleEdit = (Slider) => navigate(`/admin/sliderform/${Slider.id}`);
 
   const handleDelete = async (id) => {
     try {

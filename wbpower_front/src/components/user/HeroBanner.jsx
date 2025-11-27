@@ -15,6 +15,10 @@ const HeroBanner = () => {
           alt="Banner 1"
         />
         <div className="carousel-caption text-start container">
+          <div>
+            <a href="/register" className="btn btn-lg btn-primary me-2">Register</a>
+            <a href="/login" className="btn btn-lg btn-primary">Login</a>
+          </div>
           <h1>
             Welcome to
             <br /> <span className="highlight">Department</span>
@@ -22,6 +26,7 @@ const HeroBanner = () => {
             <br />
             Government of West Bengal
           </h1>
+          
         </div>
       </div>
       {/* ✅ Slide 2 */}
@@ -38,6 +43,10 @@ const HeroBanner = () => {
             Towards a <br />
             <span className="highlight">Brighter Future</span>
           </h1>
+          <div className="mt-4">
+            <a href="/register" className="btn btn-lg btn-primary me-2">Register</a>
+            <a href="/contact_us" className="btn btn-lg btn-outline-light">Contact Us</a>
+          </div>
         </div>
       </div>
     </div>

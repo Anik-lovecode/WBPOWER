@@ -26,8 +26,13 @@ const AdminSidebar = ({ sidebarOpen, closeSidebar }) => {
   const [customPostTables, setCustomPostTables] = useState([]);
 
   const handleLogout = () => {
+    // Try call server logout (revoke token) but proceed regardless of network errors
+    // Pass a skip flag so the global 401 handler doesn't redirect to /login during logout
+    // Treat 401 as an acceptable response for logout (token may already be invalid/expired).
+    api.post('/logout', null, { headers: { 'X-Skip-Auth-Redirect': '1' }, validateStatus: (status) => status >= 200 && status < 500 })
+      .catch(() => {});
     dispatch(logout());
-    navigate('/login'); 
+    navigate('/');
   };
 
   // Get first letter from user name or fallback

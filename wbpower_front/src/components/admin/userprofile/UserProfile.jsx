@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from "react-router-dom";
 import { logout } from '../../../redux/authSlice';
+import api from '../../../api/api';
 import { useDispatch } from 'react-redux';
 import defaultAvatar from '../../../assets/images/admin/avatar.jpg';
 
@@ -25,8 +26,12 @@ const UserProfile = () => {
   }, []);
 
   const handleLogout = () => {
+    // Try to revoke server token, but proceed even if request fails
+    // Pass a skip header so the API global 401 redirect won't fire during logout
+    api.post('/logout', null, { headers: { 'X-Skip-Auth-Redirect': '1' }, validateStatus: (status) => status >= 200 && status < 500 })
+      .catch(() => {});
     dispatch(logout());
-    navigate('/login'); // redirect after logout
+    navigate('/'); // redirect to home after logout
   };
 
   return (
@@ -44,7 +49,7 @@ const UserProfile = () => {
               onClick={handleLogout}
               className="block w-full text-left py-2 px-2 text-sm text-gray-700 text-logout"
             >
-              Sign out &nbsp; <i class="fas fa-sign-out-alt"></i>
+              Sign out &nbsp; <i className="fas fa-sign-out-alt"></i>
             </button>
           </div>
         </div>

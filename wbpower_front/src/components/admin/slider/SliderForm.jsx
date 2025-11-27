@@ -91,7 +91,7 @@ export default function SliderForm() {
       }
 
       reset();
-      navigate("/slider");
+      navigate("/admin/slider");
     } catch (error) {
       console.error(
         id ? "Failed to update Slider:" : "Failed to create Slider:",

@@ -19,8 +19,13 @@ api.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
+      // Allow requests to opt-out of the automatic redirect by setting
+      // the custom header 'X-Skip-Auth-Redirect' on the request.
+      const skip = error.config?.headers?.['X-Skip-Auth-Redirect'] || error.config?._skipAuthRedirect;
       localStorage.removeItem("token");
-      window.location.href = "/login";
+      if (!skip) {
+        window.location.href = "/login";
+      }
     }
     return Promise.reject(error);
   }

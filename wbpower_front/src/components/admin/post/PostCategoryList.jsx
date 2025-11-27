@@ -57,8 +57,8 @@ export default function PostCategoryList() {
   const handleNext = () => setCurrentPage((prev) => Math.min(prev + 1, totalPages));
 
   // Placeholder edit/delete actions
-   const AddPostCategory = () => navigate("/post-category-form");
-  const handleEdit = (post) => navigate(`/post-category-form/${post.id}`);
+   const AddPostCategory = () => navigate("/admin/post-category-form");
+  const handleEdit = (post) => navigate(`/admin/post-category-form/${post.id}`);
   const handleDelete = async (id) => {
     try {
       if (window.confirm("Are you sure you want to delete this post category?")) {

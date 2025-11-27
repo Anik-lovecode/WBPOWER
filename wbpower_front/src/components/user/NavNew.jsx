@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Nav, Navbar, Dropdown, IconButton } from "rsuite";
+import { Nav, Navbar, IconButton } from "rsuite";
 import MenuIcon from "@rsuite/icons/Menu";
 import "rsuite/dist/rsuite.min.css";
 import api from "../../api/api";
@@ -18,7 +18,8 @@ export default function NavNew() {
   const [loading, setLoading] = useState(true);
   const [sticky, setSticky] = useState(false);
 
-  const [isDesktop, setIsDesktop] = useState(window.innerWidth >= 992);
+  // Avoid reading window at module evaluation to prevent SSR/hydration mismatch.
+  const [isDesktop, setIsDesktop] = useState(true);
   const [mobileOpen, setMobileOpen] = useState(false);
 
   /* Load from localStorage */
@@ -78,68 +79,46 @@ export default function NavNew() {
     return () => window.removeEventListener("scroll", handler);
   }, []);
 
-  /* Desktop/mobile detection */
+  /* Desktop/mobile detection (set after mount to avoid hydration mismatch) */
   useEffect(() => {
-    const onResize = () => setIsDesktop(window.innerWidth >= 992);
+    const setFromWindow = () => setIsDesktop(window.innerWidth >= 992);
+    setFromWindow();
+    const onResize = () => setFromWindow();
     window.addEventListener("resize", onResize);
     return () => window.removeEventListener("resize", onResize);
   }, []);
 
-  /* Render Desktop Menu */
-  const renderDesktopMenu = (items) =>
-    items.map((item) =>
-      item.children && item.children.length ? (
-        <Dropdown title={item.title} key={item.id ?? item.title}>
-          {item.children.map((sub) =>
-            sub.children && sub.children.length ? (
-              <Dropdown.Menu key={sub.id ?? sub.title} title={sub.title}>
-                {sub.children.map((c) => (
-                  <Dropdown.Item href={c.url ?? "#"} key={c.id ?? c.title}>
-                    {c.title}
-                  </Dropdown.Item>
-                ))}
-              </Dropdown.Menu>
-            ) : (
-              <Dropdown.Item href={sub.url ?? "#"} key={sub.id ?? sub.title}>
-                {sub.title}
-              </Dropdown.Item>
-            )
-          )}
-        </Dropdown>
-      ) : (
-        <Nav.Item href={item.url ?? "#"} key={item.id ?? item.title}>
-          {item.title}
-        </Nav.Item>
-      )
-    );
+  /* Helper: render nested Nav.Menu/Nav.Item for arbitrary depth */
+  const renderMenuTree = (items = [], level = 0) =>
+    items.map((item) => {
+      const key = item.id ?? `${item.title}-${level}-${Math.random().toString(36).slice(2, 7)}`;
+      const hasChildren = item.children && item.children.length > 0;
 
-  /* Render Mobile Menu */
-  const renderMobileMenu = (items) =>
-    items.map((item) =>
-      item.children && item.children.length ? (
-        <Dropdown.Menu key={item.id ?? item.title} title={item.title}>
-          {item.children.map((sub) =>
-            sub.children && sub.children.length ? (
-              <Dropdown.Menu key={sub.id ?? sub.title} title={sub.title}>
-                {sub.children.map((gc) => (
-                  <Dropdown.Item href={gc.url ?? "#"} key={gc.id ?? gc.title}>
-                    {gc.title}
-                  </Dropdown.Item>
-                ))}
-              </Dropdown.Menu>
-            ) : (
-              <Dropdown.Item href={sub.url ?? "#"} key={sub.id ?? sub.title}>
-                {sub.title}
-              </Dropdown.Item>
-            )
-          )}
-        </Dropdown.Menu>
-      ) : (
-        <Nav.Item href={item.url ?? "#"} key={item.id ?? item.title}>
+      if (hasChildren) {
+        return (
+          <Nav.Menu
+            key={key}
+            title={item.title}
+            eventKey={key}
+            aria-label={`${item.title} submenu`}
+          >
+            {renderMenuTree(item.children, level + 1)}
+          </Nav.Menu>
+        );
+      }
+
+      return (
+        <Nav.Item
+          key={key}
+          href={item.url ?? "#"}
+          eventKey={key}
+          as="a"
+          aria-label={item.title}
+        >
           {item.title}
         </Nav.Item>
-      )
-    );
+      );
+    });
 
   return (
     <div
@@ -158,8 +137,9 @@ export default function NavNew() {
         {!isDesktop && (
           <IconButton
             icon={<MenuIcon />}
-            onClick={() => setMobileOpen(!mobileOpen)}
+            onClick={() => setMobileOpen((s) => !s)}
             appearance="subtle"
+            aria-label="Toggle menu"
           />
         )}
 
@@ -172,7 +152,7 @@ export default function NavNew() {
               width: "100%",
             }}
           >
-            <Nav>{renderDesktopMenu(menus)}</Nav>
+            <Nav>{renderMenuTree(menus)}</Nav>
           </div>
         )}
       </Navbar>
@@ -187,10 +167,9 @@ export default function NavNew() {
             borderBottom: "1px solid #ddd",
           }}
         >
-          {renderMobileMenu(menus)}
+          {renderMenuTree(menus)}
         </Nav>
       )}
     </div>
-    
   );
 }

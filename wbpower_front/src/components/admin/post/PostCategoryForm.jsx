@@ -121,7 +121,7 @@ export default function PostCategoryForm() {
       }
 
       reset();
-      navigate("/post-category");
+      navigate("/admin/post-category");
     } catch (error) {
       console.error(
         id ? "Failed to update post:" : "Failed to create post:",
@@ -136,9 +136,9 @@ export default function PostCategoryForm() {
 
   return (
       <div>
-                <div class="card-header p-0 position-relative mt-n4 mx-3 z-index-2 top-7">
-              <div class="bg-gradient-dark shadow-dark border-radius-lg pt-4 pb-3">
-                <h6 class="text-white text-capitalize ps-3">Post Category /   {id ? "Edit" : "Create"}</h6>
+                <div className="card-header p-0 position-relative mt-n4 mx-3 z-index-2 top-7">
+              <div className="bg-gradient-dark shadow-dark border-radius-lg pt-4 pb-3">
+                <h6 className="text-white text-capitalize ps-3">Post Category /   {id ? "Edit" : "Create"}</h6>
               </div>
             </div>
             <form

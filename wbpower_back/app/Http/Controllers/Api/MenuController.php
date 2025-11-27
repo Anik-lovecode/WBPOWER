@@ -109,15 +109,8 @@ class MenuController extends Controller
     public function menuList(Request $request)
     {
         try {
-            $user = Auth::user();
-
-            if (!$user) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Unauthorized'
-                ], 401);
-            }
-
+            // Public-facing menu list — no auth required. Return top-level menus and
+            // nested children that are active.
             $menus = Menu::whereNull('parent_id')
                 ->where('is_active', true)
                 ->orderBy('order', 'asc')
