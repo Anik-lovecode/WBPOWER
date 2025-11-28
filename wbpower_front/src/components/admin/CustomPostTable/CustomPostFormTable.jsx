@@ -5,6 +5,7 @@ import { FiEdit, FiTrash2, FiPlus, FiSearch } from "react-icons/fi";
 export default function CustomPostFormTable() {
   const [categories, setCategories] = useState([]);
   const [tableName, setTableName] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState(null);
   const [fields, setFields] = useState([{ name: "", type: "string" }]);
   const [message, setMessage] = useState("");
 
@@ -32,19 +33,18 @@ export default function CustomPostFormTable() {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (!tableName) {
+    if (!tableName || !selectedCategory) {
       setMessage("Please select a category.");
       return;
     }
 
-    const formattedFields = {};
-    fields.forEach((f) => {
-      if (f.name && f.type) {
-        formattedFields[f.name] = f.type;
-      }
-    });
+    // Prepare fields array and ensure category fields exist
+    const formattedFields = [...fields.filter((f) => f.name && f.type)];
+    const names = formattedFields.map((f) => String(f.name).toLowerCase());
+    if (!names.includes('category_id')) formattedFields.push({ name: 'category_id', type: 'integer' });
+    if (!names.includes('category_name')) formattedFields.push({ name: 'category_name', type: 'string' });
 
-    if (Object.keys(formattedFields).length === 0) {
+    if (formattedFields.length === 0) {
       setMessage("Add at least one field.");
       return;
     }
@@ -55,12 +55,15 @@ export default function CustomPostFormTable() {
         {
           table_name: tableName,
           fields: formattedFields,
+          category_id: selectedCategory?.id,
+          category_name: selectedCategory?.category_name,
         }
       );
 
       setMessage(res.data.success || "Table created!");
       setFields([{ name: "", type: "string" }]); // reset fields
       setTableName("");
+      setSelectedCategory(null);
     } catch (err) {
       console.error(err);
       setMessage(err.response?.data?.error || "Something went wrong");
@@ -80,14 +83,19 @@ export default function CustomPostFormTable() {
         <div className="mb-4">
           <label className="block font-medium mb-2">Select Category</label>
           <select
-            value={tableName}
-            onChange={(e) => setTableName(e.target.value)}
+            value={selectedCategory ? selectedCategory.id : ""}
+            onChange={(e) => {
+              const id = e.target.value;
+              const cat = categories.find((c) => String(c.id) === String(id));
+              setSelectedCategory(cat || null);
+              setTableName(cat ? (cat.category_slug || cat.category_name) : "");
+            }}
             className="w-full border px-3 py-2"
             required
           >
             <option value="">-- Choose Category --</option>
             {categories.map((cat) => (
-              <option key={cat.id} value={cat.category_slug || cat.category_name}>
+              <option key={cat.id} value={cat.id}>
                 {cat.category_name}
               </option>
             ))}
@@ -146,7 +154,7 @@ export default function CustomPostFormTable() {
         {/* Submit */}
         <button
           type="submit"
-          className="p-head w-btn py-2 text-white font-semibold rounded-lg transition mt-5 w-full py-2"
+          className="p-head w-btn text-white font-semibold rounded-lg transition mt-5 w-full py-2"
         >
           Create Table
         </button>

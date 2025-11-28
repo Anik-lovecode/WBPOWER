@@ -64,8 +64,8 @@ export default function CustomPostList({ tableName }) {
   const handleNext = () => setCurrentPage((prev) => Math.min(prev + 1, totalPages));
 
   // Actions
-  const handleAdd = () => navigate(`/custom-post-form/${tableName}`);
-  const handleEdit = (post) => navigate(`/custom-post-form/${tableName}/${post.id}`);
+  const handleAdd = () => navigate(`/admin/custom-post-form/${tableName}`);
+  const handleEdit = (post) => navigate(`/admin/custom-post-form/${tableName}/${post.id}`);
 
 const handleDelete = async (id) => {
   const confirmDelete = window.confirm("Are you sure you want to delete this post?");

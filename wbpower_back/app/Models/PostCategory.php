@@ -11,6 +11,7 @@ class PostCategory extends Model
         'category_slug',
         'category_desc',
         'category_parent',
+        'custompost_table_name',
     ];
 
     public function posts()

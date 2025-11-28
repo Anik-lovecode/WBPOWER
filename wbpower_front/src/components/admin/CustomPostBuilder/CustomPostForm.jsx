@@ -17,6 +17,7 @@ export default function CustomPostForm() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState(null);
   const [previews, setPreviews] = useState({});
+  const [selectedCategory, setSelectedCategory] = useState(null);
 
   useEffect(() => {
     if (!tableName) {
@@ -35,6 +36,7 @@ export default function CustomPostForm() {
       setLoading(true);
       setError(null);
       try {
+        // backend route is /custom-post-form-fields/{tableName} (not /admin/)
         const fieldRes = await api.get(`/custom-post-form-fields/${tableName}`);
         const fields = fieldRes.data?.fields || [];
         setFormFields(fields);
@@ -63,6 +65,24 @@ export default function CustomPostForm() {
             }
           });
           setPreviews(filePreviews);
+        }
+
+        // Try to detect category associated with this table (post_categories.custompost_table_name)
+        try {
+          const catRes = await api.get('/allpostcategory');
+          const cats = catRes.data?.data || [];
+          const cat = cats.find((c) => c.custompost_table_name === tableName);
+          if (cat) {
+            setSelectedCategory(cat);
+            // For create mode, prefill category fields
+            if (mode === 'create') {
+              if (fields.some(f => f.name === 'category_id')) initialData['category_id'] = cat.id;
+              if (fields.some(f => f.name === 'category_name')) initialData['category_name'] = cat.category_name;
+            }
+            // For edit mode, do not overwrite existing post values
+          }
+        } catch (e) {
+          // ignore
         }
 
         setFormData(initialData);
@@ -161,7 +181,7 @@ export default function CustomPostForm() {
       });
 
       if (response.status === 200 || response.status === 201) {
-        navigate(`/custom-post-list/${tableName}`);
+        navigate(`/admin/custom-post-list/${tableName}`);
       } else {
         setError("Submission failed.");
       }
@@ -198,6 +218,42 @@ export default function CustomPostForm() {
         {formFields.map((field, index) => {
           const hasError = !!errors[field.name];
           const borderClass = hasError ? "border-red-500" : "border-gray-300";
+
+          // Special handling for category fields
+          if (String(field.name).toLowerCase() === 'category_id') {
+            return (
+              <div key={index} className="flex flex-col mb-4">
+                <input
+                  type="hidden"
+                  id={field.name}
+                  name={field.name}
+                  value={formData[field.name] || (selectedCategory ? selectedCategory.id : '')}
+                  onChange={handleInputChange}
+                />
+              </div>
+            );
+          }
+
+          if (String(field.name).toLowerCase() === 'category_name') {
+            return (
+              <div key={index} className="flex flex-col mb-4">
+                <label
+                  htmlFor={field.name}
+                  className="block mb-1 font-medium text-gray-700"
+                >
+                  {field.label || field.name}
+                </label>
+                <input
+                  type="text"
+                  id={field.name}
+                  name={field.name}
+                  value={formData[field.name] || (selectedCategory ? selectedCategory.category_name : '')}
+                  readOnly
+                  className={`w-full px-2 py-2 border rounded-lg ${borderClass} bg-gray-100`}
+                />
+              </div>
+            );
+          }
 
           return (
             <div key={index} className="flex flex-col mb-4">

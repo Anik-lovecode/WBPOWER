@@ -59,3 +59,37 @@ If you discover a security vulnerability within Laravel, please send an e-mail t
 ## License
 
 The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+
+## Local development notes (WBPOWER)
+
+If you see the error "Token generation failed. Make sure Passport keys are installed and valid." when creating API tokens, Passport's RSA key pair is missing or invalid.
+
+Quick fix locally:
+
+- Run in the backend folder:
+
+```powershell
+cd wbpower_back
+php artisan passport:install
+```
+
+- This will generate `storage/oauth-private.key` and `storage/oauth-public.key` and create the passport clients. If the app already has the Passport tables, you may skip re-running migrations.
+
+Headless verification (optional):
+
+1. You can confirm there are users:
+
+```powershell
+php artisan tinker --execute='print(\App\Models\User::count());'
+```
+
+2. A small helper script is included at `tools/generate_test_token.php` for local verification. Run it from the backend folder:
+
+```powershell
+php tools/generate_test_token.php
+```
+
+CI / Production notes:
+
+- You can also set `PASSPORT_PRIVATE_KEY` and `PASSPORT_PUBLIC_KEY` in your environment if you prefer to manage keys as environment variables (avoid committing private keys to the repo).
+

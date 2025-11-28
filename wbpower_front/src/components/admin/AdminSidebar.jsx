@@ -54,12 +54,12 @@ const AdminSidebar = ({ sidebarOpen, closeSidebar }) => {
 
   // Build dynamic submenu for Custom Post
   const customPostSubMenu = customPostTables.map(tableName => ({
-  label: tableName
-    .replace(/^custompost_/, "")             // Remove "custompost_" prefix
-    .replace(/_/g, " ")                      // Replace underscores with spaces
-    .replace(/\b\w/g, c => c.toUpperCase()), // Capitalize each word
-  to: `/custom-post-list/${tableName}`,      // ✅ Correct route
-}));
+    label: tableName
+      .replace(/^custompost_/, "")             // Remove "custompost_" prefix
+      .replace(/_/g, " ")                      // Replace underscores with spaces
+      .replace(/\b\w/g, c => c.toUpperCase()), // Capitalize each word
+    to: `/admin/custom-post-list/${tableName}`,      // ✅ Correct route
+  }));
 
   // Menu items including dynamic custom posts submenu
   const menuItems = [
