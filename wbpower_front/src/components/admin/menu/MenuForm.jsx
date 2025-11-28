@@ -1,7 +1,7 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 import api from "../../../api/api";
-import { FiTrash2, FiEdit2 } from "react-icons/fi";
+import { FiTrash2, FiEdit2, FiChevronRight, FiChevronDown } from "react-icons/fi";
 
 function MenuForm() {
   // Toggle optimistic updates here
@@ -27,6 +27,11 @@ function MenuForm() {
   const [success, setSuccess] = useState(false);
   const [editingId, setEditingId] = useState(null);
 
+  // Keep track of expanded nodes (collapsible)
+  const [expanded, setExpanded] = useState(() => new Set());
+
+  const formRef = useRef(null);
+
   // Fetch & normalize
   const normalizeTree = (items) =>
     items.map((item) => ({
@@ -42,8 +47,8 @@ function MenuForm() {
     setLoadingMenus(true);
     try {
       const res = await api.get("/menu-list");
-      const rawData = res.data.data || [];
-      setMenus(normalizeTree(rawData));
+      const rawData = res?.data?.data ?? res?.data ?? [];
+      setMenus(normalizeTree(Array.isArray(rawData) ? rawData : []));
     } catch (err) {
       console.error("Error fetching menus:", err);
     } finally {
@@ -122,7 +127,9 @@ function MenuForm() {
     const insertRec = (nodes) =>
       nodes.map((n) => {
         if (n.id === parentId) {
-          const children = n.children ? [...n.children, { ...newNode, children: newNode.children || [] }] : [{ ...newNode, children: [] }];
+          const children = n.children
+            ? [...n.children, { ...newNode, children: newNode.children || [] }]
+            : [{ ...newNode, children: [] }];
           return { ...n, children };
         }
         if (n.children && n.children.length) {
@@ -152,12 +159,24 @@ function MenuForm() {
     }
   };
 
-  // Edit click: prefill, compute parent value as string
+  // Edit click: prefill, compute parent value as string, and scroll to formRef
   const handleEditClick = (item) => {
     const parentValue = item.parent_id === null || item.parent_id === undefined ? "null" : String(item.parent_id);
     setEditingId(item.id);
     reset({ title: item.title || "", url: item.url || "", parent_id: parentValue });
-    window.scrollTo({ top: 0, behavior: "smooth" });
+
+    // ensure the form is visible — smooth scroll to form
+    if (formRef.current) {
+      formRef.current.scrollIntoView({ behavior: "smooth", block: "start" });
+      // also focus first input a bit later for keyboard users
+      setTimeout(() => {
+        const el = formRef.current.querySelector("#title-input");
+        if (el) el.focus();
+      }, 450);
+    } else {
+      // fallback
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
   };
 
   // Submit (create or update)
@@ -202,11 +221,7 @@ function MenuForm() {
         // Create API - your original used PUT /menu for add
         const createRes = await api.put("/menu", payload);
         // If optimistic create used a temp node, reconcile server response (replace temp node with real one)
-        if (useOptimistic && createRes?.data?.data) {
-          const created = createRes.data.data;
-          // replace the temp node (if any) with the created item; but best is to refetch authoritative list
-          // We'll do a safe refetch to ensure tree structure matches server (keeps code simple)
-        }
+        // We'll always fetch authoritative list below for simplicity and correctness
       }
 
       // On success: fetch to get authoritative structure (keeps ordering, IDs, children consistent)
@@ -223,8 +238,6 @@ function MenuForm() {
 
       // rollback: refetch authoritative list to recover from optimistic change
       await fetchMenus();
-
-      // alternatively, we could setMenus(prevMenus) to revert snapshot, but refetch is safest
     }
   };
 
@@ -233,9 +246,22 @@ function MenuForm() {
   // Precompute descendant ids of editing item to disable as parent choices
   const disabledDescendantIds = editingId ? getDescendantIds(menus, editingId) : [];
 
-  // render rows with buttons aligned in a flex group
+  // Expand/collapse toggling
+  const isExpanded = (id) => expanded.has(id);
+  const toggleExpanded = (id) => {
+    setExpanded((prev) => {
+      const copy = new Set(prev);
+      if (copy.has(id)) copy.delete(id);
+      else copy.add(id);
+      return copy;
+    });
+  };
+
+  // render rows with collapsible children
   const renderMenuRows = (items, level = 0) => {
     return items.flatMap((item, index) => {
+      const hasChildren = item.children && item.children.length > 0;
+      const key = item.id ?? `${item.title}-${level}-${index}`;
       const submenuBadge =
         level > 0 ? (
           <span
@@ -252,14 +278,15 @@ function MenuForm() {
               fontSize: 12,
               userSelect: "none",
             }}
+            aria-hidden
           >
             {index + 1}
           </span>
         ) : null;
 
-      return [
+      const row = (
         <tr
-          key={item.id}
+          key={key}
           style={{
             backgroundColor: "#fff",
             borderBottom: "1px solid #e5e7eb",
@@ -275,9 +302,37 @@ function MenuForm() {
               whiteSpace: "nowrap",
             }}
           >
-            {submenuBadge}
-            {item.title}
+            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              {hasChildren ? (
+                <button
+                  onClick={() => toggleExpanded(item.id)}
+                  aria-expanded={isExpanded(item.id)}
+                  aria-label={`${isExpanded(item.id) ? "Collapse" : "Expand"} ${item.title}`}
+                  style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    width: 28,
+                    height: 28,
+                    borderRadius: 6,
+                    border: "none",
+                    background: "transparent",
+                    cursor: "pointer",
+                    color: "#6b7280",
+                  }}
+                >
+                  {isExpanded(item.id) ? <FiChevronDown /> : <FiChevronRight />}
+                </button>
+              ) : (
+                // preserve spacing so titles align
+                <span style={{ width: 28, display: "inline-block" }} />
+              )}
+
+              {submenuBadge}
+              <span>{item.title}</span>
+            </div>
           </td>
+
           <td
             style={{
               padding: "12px",
@@ -287,6 +342,7 @@ function MenuForm() {
           >
             {item.url}
           </td>
+
           <td
             style={{
               textAlign: "right",
@@ -334,9 +390,13 @@ function MenuForm() {
               </button>
             </div>
           </td>
-        </tr>,
-        ...(item.children && item.children.length > 0 ? renderMenuRows(item.children, level + 1) : []),
-      ];
+        </tr>
+      );
+
+      const childrenRows =
+        hasChildren && isExpanded(item.id) ? renderMenuRows(item.children, level + 1) : [];
+
+      return [row, ...childrenRows];
     });
   };
 
@@ -348,7 +408,11 @@ function MenuForm() {
         </div>
       </div>
 
-      <form onSubmit={handleSubmit(onSubmit)} className="mx-auto p-frm bg-white rounded-2xl shadow-lg font-sans ">
+      <form
+        ref={formRef}
+        onSubmit={handleSubmit(onSubmit)}
+        className="mx-auto p-frm bg-white rounded-2xl shadow-lg font-sans "
+      >
         <div className="mb-3">
           <label htmlFor="title" className="block mb-1 font-medium text-gray-700">
             Title
@@ -437,9 +501,7 @@ function MenuForm() {
       </form>
 
       {message && (
-        <p style={{ marginTop: 10, color: success ? "green" : "red", fontWeight: "600" }}>
-          {message}
-        </p>
+        <p style={{ marginTop: 10, color: success ? "green" : "red", fontWeight: "600" }}>{message}</p>
       )}
 
       <div className="menu-list-container mt-6">
@@ -476,3 +538,4 @@ function MenuForm() {
 }
 
 export default MenuForm;
+
