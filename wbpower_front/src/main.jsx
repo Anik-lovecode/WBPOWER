@@ -8,12 +8,14 @@ import App from './App.jsx'
 import { Provider } from "react-redux";
 import store from "./redux/store";
 import '@fortawesome/fontawesome-free/css/all.min.css';
+import AppRoutes from './routs/Approuts.jsx';
 
 
 createRoot(document.getElementById('root')).render(
   <React.StrictMode>
     <Provider store={store}>
       <App />
+      {/* <AppRoutes/> */}
     </Provider>
   </React.StrictMode>
 )

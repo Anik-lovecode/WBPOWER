@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { Nav, Navbar, IconButton } from "rsuite";
 import MenuIcon from "@rsuite/icons/Menu";
 import "rsuite/dist/rsuite.min.css";
-import api from "../../api/api";
+import api from "../api/api";
 
 const MENU_CACHE_KEY = "site_menus_v1_rsuite";
 
@@ -107,28 +107,15 @@ export default function NavNew() {
         );
       }
 
-      // return (
-      //   <Nav.Item
-      //     key={key}
-      //     href={item.url ?? "#"}
-      //     eventKey={key}
-      //     as="a"
-      //     aria-label={item.title}
-      //   >
-      //     {item.title}
-      //     {item.url}
-      //   </Nav.Item>
-      // );
       return (
         <Nav.Item
           key={key}
-          href={"page/"+item.url }
+          href={item.url ?? "#"}
           eventKey={key}
           as="a"
           aria-label={item.title}
         >
           {item.title}
-          
         </Nav.Item>
       );
     });

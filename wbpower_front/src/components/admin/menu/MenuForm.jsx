@@ -3,6 +3,12 @@ import { useForm } from "react-hook-form";
 import api from "../../../api/api";
 import { FiTrash2, FiEdit2, FiChevronRight, FiChevronDown } from "react-icons/fi";
 
+/**
+ * MenuForm.jsx
+ * - Adds Up/Down and Move (modal) controls for reordering menu items.
+ * - Uses api.post('/menu/reorder', { items }) to sync ordering.
+ */
+
 function MenuForm() {
   // Toggle optimistic updates here
   const useOptimistic = true;
@@ -30,13 +36,19 @@ function MenuForm() {
   // Keep track of expanded nodes (collapsible)
   const [expanded, setExpanded] = useState(() => new Set());
 
+  // Move modal state
+  const [moveModalOpen, setMoveModalOpen] = useState(false);
+  const [moveTarget, setMoveTarget] = useState(null); // item being moved
+  const [moveParent, setMoveParent] = useState("null");
+  const [movePosition, setMovePosition] = useState(null); // number or null
+
   const formRef = useRef(null);
 
   // Fetch & normalize
   const normalizeTree = (items) =>
     items.map((item) => ({
       ...item,
-      children: item.children_recursive ? normalizeTree(item.children_recursive) : [],
+      children: item.children_recursive ? normalizeTree(item.children_recursive) : item.children || [],
     }));
 
   useEffect(() => {
@@ -94,7 +106,7 @@ function MenuForm() {
     return Array.from(ids);
   };
 
-  // tree update helpers
+  // tree update helpers (remove/insert/move)
   const removeFromTree = (tree, idToRemove) => {
     return tree
       .map((node) => {
@@ -127,9 +139,7 @@ function MenuForm() {
     const insertRec = (nodes) =>
       nodes.map((n) => {
         if (n.id === parentId) {
-          const children = n.children
-            ? [...n.children, { ...newNode, children: newNode.children || [] }]
-            : [{ ...newNode, children: [] }];
+          const children = n.children ? [...n.children, { ...newNode, children: newNode.children || [] }] : [{ ...newNode, children: [] }];
           return { ...n, children };
         }
         if (n.children && n.children.length) {
@@ -138,6 +148,92 @@ function MenuForm() {
         return n;
       });
     return insertRec(tree);
+  };
+
+  // New: remove node by id and return removed node & new tree
+  const removeNodeById = (tree, id) => {
+    let removed = null;
+    const walk = (nodes) =>
+      nodes
+        .map((n) => {
+          if (n.id === id) {
+            removed = { ...n, children: n.children || [] };
+            return null;
+          }
+          if (n.children && n.children.length) {
+            return { ...n, children: walk(n.children).filter(Boolean) };
+          }
+          return n;
+        })
+        .filter(Boolean);
+    return { newTree: walk(tree), removed };
+  };
+
+  // New: insert node at specific index under parent
+  const insertNodeAt = (tree, parentId, node, position = null) => {
+    if (parentId === null || parentId === "null") {
+      const copy = [...tree];
+      if (position === null || position >= copy.length) copy.push(node);
+      else copy.splice(position, 0, node);
+      return copy;
+    }
+    const walk = (nodes) =>
+      nodes.map((n) => {
+        if (n.id === parentId) {
+          const children = n.children ? [...n.children] : [];
+          if (position === null || position >= children.length) children.push(node);
+          else children.splice(position, 0, node);
+          return { ...n, children };
+        }
+        if (n.children && n.children.length) {
+          return { ...n, children: walk(n.children) };
+        }
+        return n;
+      });
+    return walk(tree);
+  };
+
+  // New: move node (remove then insert)
+  const moveNode = (tree, id, newParentId, newPosition = null) => {
+    const { newTree, removed } = removeNodeById(tree, id);
+    if (!removed) return tree; // not found
+    // keep removed.children as is (move subtree)
+    return insertNodeAt(newTree, newParentId, removed, newPosition);
+  };
+
+  // helper to replace the temporary node (tempId negative) with server created node
+  const replaceTempNode = (tree, tempId, createdNode) => {
+    const replaceRec = (nodes) =>
+      nodes.map((n) => {
+        if (n.id === tempId) {
+          return { ...createdNode, children: n.children || createdNode.children || [] };
+        }
+        if (n.children && n.children.length) {
+          return { ...n, children: replaceRec(n.children) };
+        }
+        return n;
+      });
+    return replaceRec(tree);
+  };
+
+  // helper: get children array for a given parent id from tree (returns reference-copy)
+  const getChildrenByParentId = (tree, parentId) => {
+    if (parentId === null || parentId === "null") return tree;
+    let found = null;
+    const walk = (nodes) => {
+      for (const n of nodes) {
+        if (n.id === parentId) {
+          found = n.children || [];
+          return true;
+        }
+        if (n.children && n.children.length) {
+          if (walk(n.children)) return true;
+        }
+      }
+      return false;
+    };
+    walk(tree);
+    return found || [];
   };
 
   // Delete handler (keeps original confirm + API flow)
@@ -196,7 +292,7 @@ function MenuForm() {
     // Optimistic branch
     if (useOptimistic) {
       if (editingId) {
-        // optimistic update of the item locally
+        // optimistic update of the item locally (in-place: keeps order)
         setMenus((prev) =>
           findAndUpdateInTree(prev, editingId, (node) => ({
             ...node,
@@ -216,21 +312,64 @@ function MenuForm() {
     try {
       if (editingId) {
         // Update API - change method if your backend expects PATCH
-        await api.put(`/menu/${editingId}`, payload);
+        const res = await api.put(`/menu/${editingId}`, payload);
+
+        // IMPORTANT: don't refetch full list on update to preserve UI order.
+        // Instead, reconcile using server response if it returned updated object.
+        if (res?.data?.data) {
+          const updated = res.data.data;
+          setMenus((prev) =>
+            findAndUpdateInTree(prev, editingId, (node) => ({
+              ...node,
+              title: updated.title ?? payload.title,
+              url: updated.url ?? payload.url,
+              parent_id: updated.parent_id ?? payload.parent_id,
+            }))
+          );
+        }
+
+        setMessage("Menu item updated successfully!");
+        setSuccess(true);
+        setEditingId(null);
+        reset({ title: "", url: "", parent_id: "null" });
       } else {
         // Create API - your original used PUT /menu for add
         const createRes = await api.put("/menu", payload);
-        // If optimistic create used a temp node, reconcile server response (replace temp node with real one)
-        // We'll always fetch authoritative list below for simplicity and correctness
+        const created = createRes?.data?.data;
+
+        if (created) {
+          // if we used a temp node, replace it with the created item
+          setMenus((prev) => {
+            // find if a temp node with negative id exists matching title/url/parent
+            const firstTemp = (function findTemp(nodes) {
+              for (const n of nodes) {
+                if (n.id < 0 && n.title === payload.title && (n.parent_id === payload.parent_id || String(n.parent_id) === String(payload.parent_id))) {
+                  return n.id;
+                }
+                if (n.children && n.children.length) {
+                  const found = findTemp(n.children);
+                  if (found) return found;
+                }
+              }
+              return null;
+            })(prev);
+
+            if (firstTemp) {
+              return replaceTempNode(prev, firstTemp, { ...created, children: created.children || [] });
+            }
+
+            // fallback: insert created node under parent (appended)
+            return insertNodeUnderParent(prev, created.parent_id, { ...created, children: created.children || [] });
+          });
+        } else {
+          // if server didn't return created item, fetch authoritative list
+          await fetchMenus();
+        }
+
+        setMessage("Menu item added successfully!");
+        setSuccess(true);
+        reset({ title: "", url: "", parent_id: "null" });
       }
-
-      // On success: fetch to get authoritative structure (keeps ordering, IDs, children consistent)
-      await fetchMenus();
-
-      setMessage(editingId ? "Menu item updated successfully!" : "Menu item added successfully!");
-      setSuccess(true);
-      setEditingId(null);
-      reset({ title: "", url: "", parent_id: "null" });
     } catch (error) {
       console.error("Error submitting menu:", error);
       setMessage("Error adding/updating menu.");
@@ -255,6 +394,128 @@ function MenuForm() {
       else copy.add(id);
       return copy;
     });
+  };
+
+  // ====== Reordering handlers (Up/Down + Move modal) ======
+
+  // find parent id and index of a node
+  const findParentAndIndex = (tree, id, parentId = null) => {
+    for (let i = 0; i < tree.length; i++) {
+      const n = tree[i];
+      if (n.id === id) return { parentId, index: i };
+      if (n.children && n.children.length) {
+        const res = findParentAndIndex(n.children, id, n.id);
+        if (res) return res;
+      }
+    }
+    return null;
+  };
+
+  // Build the payload array for server bulk reorder from sibling array
+  const buildReorderPayload = (siblings, parentId) =>
+    siblings.map((s, idx) => ({ id: s.id, parent_id: parentId === "null" ? null : parentId, position: idx }));
+
+  // Up: move item one position up among siblings
+  const handleMoveUp = async (id) => {
+    const loc = findParentAndIndex(menus, id);
+    if (!loc) return;
+    const { parentId, index } = loc;
+    if (index === 0) return; // already first
+
+    // local move
+    const newTree = moveNode(menus, id, parentId, index - 1);
+    setMenus(newTree);
+
+    // sync affected siblings under parentId
+    const siblings = getChildrenByParentId(newTree, parentId);
+    const payload = buildReorderPayload(siblings, parentId);
+    try {
+      await api.post("/menu/reorder", { items: payload });
+    } catch (err) {
+      console.error("Reorder failed, refetching", err);
+      await fetchMenus();
+    }
+  };
+
+  // Down: move item one position down among siblings
+  const handleMoveDown = async (id) => {
+    const loc = findParentAndIndex(menus, id);
+    if (!loc) return;
+    const { parentId, index } = loc;
+    const siblingsBefore = getChildrenByParentId(menus, parentId);
+    if (index >= siblingsBefore.length - 1) return; // already last
+
+    // local move
+    const newTree = moveNode(menus, id, parentId, index + 1);
+    setMenus(newTree);
+
+    // sync affected siblings under parentId
+    const siblings = getChildrenByParentId(newTree, parentId);
+    const payload = buildReorderPayload(siblings, parentId);
+    try {
+      await api.post("/menu/reorder", { items: payload });
+    } catch (err) {
+      console.error("Reorder failed, refetching", err);
+      await fetchMenus();
+    }
+  };
+
+  // Open move modal: prefill parent and suggested position
+  const openMoveModal = (item) => {
+    setMoveTarget(item);
+    const loc = findParentAndIndex(menus, item.id);
+    const parentId = (loc && loc.parentId) || "null";
+    setMoveParent(parentId === null ? "null" : parentId);
+    const siblings = getChildrenByParentId(menus, parentId);
+    const currentIndex = loc ? loc.index : siblings.length;
+    setMovePosition(currentIndex);
+    setMoveModalOpen(true);
+  };
+
+  // Confirm move from modal: apply local move and sync (bulk reorder)
+  const handleMoveConfirm = async () => {
+    if (!moveTarget) return setMoveModalOpen(false);
+    const id = moveTarget.id;
+    const targetParentId = moveParent === "null" ? null : Number(moveParent);
+    const targetPos = movePosition === "" || movePosition === null ? null : Number(movePosition);
+
+    // local move
+    const newTree = moveNode(menus, id, targetParentId, targetPos);
+    setMenus(newTree);
+    setMoveModalOpen(false);
+    setMoveTarget(null);
+
+    // sync siblings under the target parent and also siblings under the old parent (if different)
+    // Build payloads for both affected parents
+    const affectedParentIds = new Set();
+    affectedParentIds.add(targetParentId === null ? "null" : String(targetParentId));
+    // old parent
+    const oldLoc = findParentAndIndex(menus, id);
+    const oldParentId = oldLoc ? oldLoc.parentId : null;
+    affectedParentIds.add(oldParentId === null ? "null" : String(oldParentId));
+
+    // For each affected parent compute siblings and add to bulk payload
+    let bulk = [];
+    for (const pid of Array.from(affectedParentIds)) {
+      const pIdVal = pid === "null" ? null : Number(pid);
+      const siblings = getChildrenByParentId(newTree, pIdVal);
+      if (siblings && siblings.length) {
+        bulk = bulk.concat(buildReorderPayload(siblings, pid === "null" ? "null" : Number(pid)));
+      }
+    }
+
+    try {
+      await api.post("/menu/reorder", { items: bulk });
+    } catch (err) {
+      console.error("Move reorder failed, refetching", err);
+      await fetchMenus();
+    }
+  };
+
+  // Cancel modal
+  const handleMoveCancel = () => {
+    setMoveModalOpen(false);
+    setMoveTarget(null);
   };
 
   // render rows with collapsible children
@@ -351,6 +612,52 @@ function MenuForm() {
             }}
           >
             <div style={{ display: "inline-flex", gap: 8, alignItems: "center" }}>
+              {/* Move controls: Up, Down, Move */}
+              <button
+                onClick={() => handleMoveUp(item.id)}
+                title="Move up"
+                aria-label={`Move up ${item.title}`}
+                style={{
+                  backgroundColor: "transparent",
+                  border: "none",
+                  cursor: "pointer",
+                  padding: 6,
+                  borderRadius: 4,
+                }}
+              >
+                ▲
+              </button>
+
+              <button
+                onClick={() => handleMoveDown(item.id)}
+                title="Move down"
+                aria-label={`Move down ${item.title}`}
+                style={{
+                  backgroundColor: "transparent",
+                  border: "none",
+                  cursor: "pointer",
+                  padding: 6,
+                  borderRadius: 4,
+                }}
+              >
+                ▼
+              </button>
+
+              <button
+                onClick={() => openMoveModal(item)}
+                title="Move"
+                aria-label={`Move ${item.title}`}
+                style={{
+                  backgroundColor: "transparent",
+                  border: "none",
+                  cursor: "pointer",
+                  padding: 6,
+                  borderRadius: 4,
+                }}
+              >
+                Move
+              </button>
+
               <button
                 onClick={() => handleEditClick(item)}
                 title="Edit menu"
@@ -399,6 +706,18 @@ function MenuForm() {
       return [row, ...childrenRows];
     });
   };
+
+  // render parent options for move modal/select
+  const renderParentOptions = (nodes, level = 0) =>
+    nodes.flatMap((n) => {
+      const label = `${"— ".repeat(level)}${n.title}`;
+      return [
+        <option value={n.id} key={n.id}>
+          {label}
+        </option>,
+        ...(n.children && n.children.length ? renderParentOptions(n.children, level + 1) : []),
+      ];
+    });
 
   return (
     <div>
@@ -527,15 +846,70 @@ function MenuForm() {
             <tr>
               <th style={{ padding: "12px 16px" }}>Menu Title</th>
               <th style={{ padding: "12px 16px", width: "40%" }}>Link URL</th>
-              <th style={{ padding: "12px 16px", width: 80, textAlign: "right" }}>Actions</th>
+              <th style={{ padding: "12px 16px", width: 180, textAlign: "right" }}>Actions</th>
             </tr>
           </thead>
           <tbody>{renderMenuRows(menus)}</tbody>
         </table>
       </div>
+
+      {/* Move Modal */}
+      {moveModalOpen && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          style={{
+            position: "fixed",
+            inset: 0,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            background: "rgba(0,0,0,0.35)",
+            zIndex: 1200,
+          }}
+        >
+          <div style={{ width: 520, background: "white", borderRadius: 8, padding: 20, boxShadow: "0 8px 24px rgba(0,0,0,0.2)" }}>
+            <h4 style={{ margin: 0, marginBottom: 12 }}>Move "{moveTarget?.title}"</h4>
+
+            <div style={{ marginBottom: 10 }}>
+              <label style={{ display: "block", marginBottom: 6 }}>New Parent</label>
+              <select value={moveParent} onChange={(e) => setMoveParent(e.target.value)} style={{ width: "100%", padding: 8 }}>
+                <option value="null">-- None (top level) --</option>
+                {renderParentOptions(menus)}
+              </select>
+            </div>
+
+            <div style={{ marginBottom: 14 }}>
+              <label style={{ display: "block", marginBottom: 6 }}>Position (0-based index)</label>
+              <input
+                type="number"
+                min={0}
+                placeholder="position (e.g. 0 to insert at top)"
+                value={movePosition === null ? "" : String(movePosition)}
+                onChange={(e) => setMovePosition(e.target.value === "" ? null : Number(e.target.value))}
+                style={{ width: "100%", padding: 8 }}
+              />
+              <small style={{ color: "#6b7280" }}>
+                If left blank the item will be appended at the end.
+              </small>
+            </div>
+
+            <div style={{ display: "flex", justifyContent: "flex-end", gap: 8 }}>
+              <button onClick={handleMoveCancel} style={{ padding: "8px 12px", borderRadius: 6, background: "#f3f4f6", border: "none" }}>
+                Cancel
+              </button>
+              <button
+                onClick={handleMoveConfirm}
+                style={{ padding: "8px 12px", borderRadius: 6, background: "#111827", color: "white", border: "none" }}
+              >
+                Move
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
 
 export default MenuForm;
-

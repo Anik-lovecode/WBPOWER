@@ -1,11 +1,9 @@
+// src/App.jsx
 import React, { createContext, useEffect } from "react";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { fetchUser } from "./redux/authSlice";
 import "./index.css";
-//import React from "react";
-
-
 
 // Public login (only for Admin)
 import AdminLayout from "./components/admin/AdminLayout";
@@ -28,25 +26,22 @@ import "./assets/css/admin/style.css";
 import "./assets/css/admin/user/userstyle.css";
 import "@fortawesome/fontawesome-free/css/all.min.css";
 
-// import '../assets/admin/css/argon-dashboard-tailwind.css?v=1.0.1';
-// import '../assets/admin/css/nucleo-icons.css';
-// import '../assets/admin/css/nucleo-svg.css';
-// import '../assets/admin/css/custom.css';
-import "./assets/css/admin/style.css";
-import "./assets/css/admin/user/userstyle.css";
-import '@fortawesome/fontawesome-free/css/all.min.css';
-import ContactUs from "./pages/user/ContactUs";
+// duplicate imports removed; keep only once
+import ContactUs from "./pages/user/ContactUs"; // optional; kept in case you need it elsewhere
 import Register from "./pages/user/Register";
 import Acts from "./pages/user/Acts";
+
+// Dynamic page
+import DynamicPage from "./pages/DynamicPage";
 
 const Mycontext = createContext();
 
 // Private route guard
-const PrivateRoute = ({ children }) => 
+const PrivateRoute = ({ children }) =>
   checkAuthToken() ? children : <Navigate to="/login" replace />;
 
 // Public route guard
-const PublicRoute = ({ children }) => 
+const PublicRoute = ({ children }) =>
   !checkAuthToken() ? children : <Navigate to="/admin/dashboard" replace />;
 
 // Check if token exists for auth status
@@ -69,15 +64,26 @@ function App() {
     <Mycontext.Provider value={values}>
       <BrowserRouter>
         <Routes>
-
           {/* Public home as default */}
           <Route path="/" element={<Home />} />
-          <Route path="/contact_us" element={<ContactUs />} />
-          <Route path="/acts" element={<Acts />} />
+
+          {/* Dynamic pages (single page rendering different slugs) */}
+          <Route path="/page/:slug" element={<DynamicPage />} />
+          <Route path="/page" element={<DynamicPage />} />
+
+          {/* Redirect old contact paths to the new dynamic contact page */}
+          {/* <Route path="/contact_us" element={<Navigate to="/page/contact" replace />} />
+          <Route path="/contact" element={<Navigate to="/page/contact" replace />} /> */}
+
+          {/* Keep legacy ContactUs if you want an explicit route (optional) */}
+          {/* <Route path="/contact_us_explicit" element={<ContactUs />} /> */}
+
+          {/* <Route path="/acts" element={<Acts />} /> */}
+
+          
           <Route path="/register" element={<PublicRoute><Register /></PublicRoute>} />
 
-
-         {/* Public login (only for Admin) */}
+          {/* Public login (only for Admin) */}
           <Route path="login" element={<PublicRoute><Login /></PublicRoute>} />
 
           {/* Protected admin area (keeps same nested admin routes) */}
@@ -94,18 +100,11 @@ function App() {
             <Route path="custom-post-form-table" element={<CustomPostFormTable />} />
             <Route path="custom-post-form/:tableName/:id?" element={<CustomPostFormPage />} />
             <Route path="custom-post-list/:tableName" element={<CustomPostList />} />
-            {/* you can keep an inner default for /admin if desired */}
             <Route index element={<Navigate to="dashboard" replace />} />
           </Route>
 
-            {/* <Route path="/" element={<Navigate to="/Home" replace />} />
-          </Route> */}
-          
-          {/* Redirect unknown routes */}
-          {/* <Route
-            path="*"
-            element={checkAuthToken() ? <Navigate to="/dashboard" replace /> : <Navigate to="/login" replace />}
-          /> */}
+          {/* Optional: fallback 404 behavior (customize as needed) */}
+          <Route path="*" element={<div style={{ padding: 40 }}>404 — Page not found</div>} />
         </Routes>
       </BrowserRouter>
     </Mycontext.Provider>
