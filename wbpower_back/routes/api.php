@@ -51,6 +51,8 @@ Route::get('/menu-list', [MenuController::class, 'menuList']);
 Route::middleware('auth:api')->put('/menu', [MenuController::class, 'menuCreate']);         // create
 Route::middleware('auth:api')->put('/menu/{id}', [MenuController::class, 'menuUpdate']);  // update
 // Route::middleware('auth:api')->delete('/deletemenu/{id}', [MenuController::class, 'menuDelete']); // delete
+// Reorder menu items in bulk (expects { items: [{id,parent_id,position}, ...] })
+Route::middleware('auth:api')->post('/menu/reorder', [MenuController::class, 'reorder']);
 
 
 

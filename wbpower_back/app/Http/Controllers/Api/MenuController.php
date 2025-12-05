@@ -10,6 +10,7 @@ use Illuminate\Validation\ValidationException;
 use App\Models\Menu;
 use App\Http\Resources\MenuResource;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\DB;
 use Exception;
 
 class MenuController extends Controller
@@ -46,6 +47,45 @@ class MenuController extends Controller
             'message' => 'Menu updated successfully',
             'data'    => new MenuResource($menu->fresh()),
         ]);
+    }
+
+    /**
+     * Bulk reorder menu items.
+     * Expects payload: { items: [ { id: 1, parent_id: null | 2, position: 0 }, ... ] }
+     */
+    public function reorder(Request $request)
+    {
+        try {
+            $user = Auth::user();
+            if (!$user) {
+                return response()->json(['success' => false, 'message' => 'Unauthorized'], 401);
+            }
+
+            $validated = $request->validate([
+                'items' => 'required|array',
+                'items.*.id' => 'required|integer|exists:menus,id',
+                'items.*.parent_id' => 'nullable|integer|exists:menus,id',
+                'items.*.position' => 'nullable|integer',
+            ]);
+
+            DB::transaction(function () use ($validated) {
+                foreach ($validated['items'] as $item) {
+                    $menu = Menu::find($item['id']);
+                    if (!$menu) continue;
+                    $menu->parent_id = array_key_exists('parent_id', $item) ? $item['parent_id'] : $menu->parent_id;
+                    $menu->order = array_key_exists('position', $item) ? ($item['position'] ?? 0) : $menu->order;
+                    $menu->save();
+                }
+            });
+
+            return response()->json(['success' => true, 'message' => 'Menu order updated successfully']);
+        } catch (ValidationException $e) {
+            Log::error('menu reorder validation failed', ['errors' => $e->errors()]);
+            return response()->json(['success' => false, 'errors' => $e->errors()], 422);
+        } catch (Exception $e) {
+            Log::error('menu reorder exception', ['error' => $e->getMessage()]);
+            return response()->json(['success' => false, 'message' => 'Something went wrong'], 500);
+        }
     }
 
     public function menuCreate(Request $request)
